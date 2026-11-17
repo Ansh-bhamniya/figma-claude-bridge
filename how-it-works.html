@@ -1,0 +1,458 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Figma Bridge Explained</title>
+<style>
+  :root {
+    --bg: #f7f6f2;
+    --surface: #ffffff;
+    --ink: #1c1b18;
+    --muted: #6b675e;
+    --line: #dedad0;
+    --accent: #b4532a;
+    --accent-soft: #f6e6dc;
+    --code-bg: #1f1e1b;
+    --code-ink: #ece8dd;
+    --ok: #2f6f4f;
+    --warn: #8a5a00;
+    --warn-soft: #fbf0d4;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #161513;
+      --surface: #1f1e1b;
+      --ink: #ece8dd;
+      --muted: #a39e92;
+      --line: #36342f;
+      --accent: #e58a5c;
+      --accent-soft: #3a261c;
+      --code-bg: #0f0e0d;
+      --code-ink: #ece8dd;
+      --ok: #7cc49d;
+      --warn: #e6b450;
+      --warn-soft: #33290f;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #161513;
+    --surface: #1f1e1b;
+    --ink: #ece8dd;
+    --muted: #a39e92;
+    --line: #36342f;
+    --accent: #e58a5c;
+    --accent-soft: #3a261c;
+    --code-bg: #0f0e0d;
+    --code-ink: #ece8dd;
+    --ok: #7cc49d;
+    --warn: #e6b450;
+    --warn-soft: #33290f;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  main { max-width: 860px; margin: 0 auto; padding: 48px 16px 80px; }
+  h1 { font-size: 2rem; line-height: 1.2; margin: 0 0 12px; letter-spacing: -0.01em; }
+  h2 { font-size: 1.35rem; margin: 56px 0 12px; padding-top: 24px; border-top: 1px solid var(--line); }
+  h3 { font-size: 1.05rem; margin: 28px 0 8px; }
+  p { margin: 0 0 14px; }
+  .lead { font-size: 1.1rem; color: var(--muted); }
+  a { color: var(--accent); }
+  code {
+    font: 0.88em/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--accent-soft);
+    padding: 1px 5px;
+    border-radius: 4px;
+  }
+  pre {
+    background: var(--code-bg);
+    color: var(--code-ink);
+    padding: 16px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 0 0 16px;
+    font: 13px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  pre code { background: none; padding: 0; font: inherit; color: inherit; }
+  .file {
+    font: 12px ui-monospace, SFMono-Regular, Menlo, monospace;
+    color: var(--muted);
+    margin: 20px 0 6px;
+  }
+
+  /* diagram */
+  .flow { display: flex; align-items: stretch; gap: 0; margin: 20px 0 8px; }
+  .node {
+    flex: 1 1 0;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 12px 10px;
+    text-align: center;
+    min-width: 0;
+  }
+  .node b { display: block; font-size: 0.95rem; }
+  .node span { display: block; font-size: 0.78rem; color: var(--muted); margin-top: 4px; }
+  .node.mid { border-color: var(--accent); }
+  .link {
+    flex: 0 0 92px;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    font-size: 0.72rem; color: var(--muted); text-align: center; padding: 0 4px;
+  }
+  .link i { font-style: normal; font-size: 1.1rem; color: var(--accent); line-height: 1; }
+  .group { font-size: 0.8rem; color: var(--muted); display: flex; gap: 0; margin-bottom: 24px; }
+  .group div { text-align: center; border-top: 2px solid var(--line); padding-top: 6px; margin: 0 4px; }
+  @media (max-width: 720px) {
+    .flow { flex-direction: column; }
+    .link { flex: 0 0 auto; padding: 6px 0; }
+    .link i { transform: rotate(90deg); }
+    .group { display: none; }
+  }
+
+  table { width: 100%; border-collapse: collapse; margin: 0 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); font-weight: 600; }
+  .scroll { overflow-x: auto; }
+
+  ol.steps { padding-left: 0; list-style: none; counter-reset: s; margin: 0 0 16px; }
+  ol.steps > li {
+    counter-increment: s;
+    position: relative;
+    padding: 0 0 16px 44px;
+  }
+  ol.steps > li::before {
+    content: counter(s);
+    position: absolute; left: 0; top: 0;
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--accent-soft); color: var(--accent);
+    font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .note {
+    background: var(--warn-soft);
+    border-left: 3px solid var(--warn);
+    padding: 12px 14px;
+    border-radius: 0 8px 8px 0;
+    margin: 0 0 16px;
+    font-size: 0.95rem;
+  }
+  .note b { color: var(--warn); }
+  ul { margin: 0 0 14px; padding-left: 22px; }
+  li { margin-bottom: 6px; }
+</style>
+</head>
+<body>
+<main>
+
+<h1>How the Figma bridge works</h1>
+<p class="lead">
+  The bridge lets a program outside Figma read and edit the open Figma file.
+  It is about 100 lines of plain JavaScript in four files. There is no AI inside it:
+  it only carries messages between two programs. This page explains each part and
+  how to build the same thing by hand.
+</p>
+
+<h2>The whole picture</h2>
+<p>
+  A request travels through five places. Each arrow is a different way of passing a message.
+</p>
+
+<div class="flow">
+  <div class="node"><b>MCP client</b><span>Claude Code, or any other MCP client</span></div>
+  <div class="link"><i>&#8596;</i>stdin / stdout<br>JSON-RPC</div>
+  <div class="node mid"><b>server/index.js</b><span>Node process on your Mac</span></div>
+  <div class="link"><i>&#8596;</i>WebSocket<br>127.0.0.1:3055</div>
+  <div class="node mid"><b>plugin/ui.html</b><span>hidden iframe inside Figma</span></div>
+  <div class="link"><i>&#8596;</i>postMessage</div>
+  <div class="node mid"><b>plugin/code.js</b><span>Figma plugin sandbox</span></div>
+  <div class="link"><i>&#8596;</i>Plugin API<br><code>figma.*</code></div>
+  <div class="node"><b>Your file</b><span>pages, frames, text</span></div>
+</div>
+<p style="font-size:0.9rem;color:var(--muted)">
+  The three boxes with the coloured border are the bridge. The two outer boxes already exist.
+</p>
+
+<h2>Why it needs three pieces</h2>
+<p>Each piece exists because of one restriction. Knowing the restrictions is the main thing you need to design this yourself.</p>
+<div class="scroll">
+<table>
+  <tr><th>Restriction</th><th>What it forces</th></tr>
+  <tr>
+    <td>Figma plugin code (<code>code.js</code>) runs in a sandbox. It can touch the document, but it has no network: no <code>WebSocket</code>, no <code>fetch</code> to localhost.</td>
+    <td>Something else must do the networking.</td>
+  </tr>
+  <tr>
+    <td>The plugin's UI (<code>ui.html</code>) is a normal browser iframe. It has <code>WebSocket</code>, but it cannot touch the document.</td>
+    <td>The iframe does the networking and forwards every message to <code>code.js</code> with <code>postMessage</code>.</td>
+  </tr>
+  <tr>
+    <td>A browser iframe can open a connection but cannot listen for one.</td>
+    <td>The plugin dials out, so a separate process must be the WebSocket server. That is the Node process.</td>
+  </tr>
+  <tr>
+    <td>An MCP client starts its tools as a child process and talks to it over stdin and stdout.</td>
+    <td>The same Node process also speaks MCP, so one program holds both ends.</td>
+  </tr>
+</table>
+</div>
+
+<h2>One request, step by step</h2>
+<p>This is what happens when the client calls the tool <code>figma_document</code>.</p>
+<ol class="steps">
+  <li>The client writes one line of JSON to the Node process's stdin: a JSON-RPC <code>tools/call</code> request naming <code>figma_document</code>.</li>
+  <li>The MCP SDK in <code>index.js</code> parses it and runs the handler registered for that tool.</li>
+  <li>The handler calls <code>call({ cmd: "document" })</code>. That function picks the next number as an <code>id</code>, stores a waiting promise under that id in a <code>Map</code>, and sends <code>{"id":1,"cmd":"document"}</code> down the WebSocket.</li>
+  <li><code>ui.html</code> receives it and passes it to the sandbox with <code>parent.postMessage({ pluginMessage: … }, "*")</code>.</li>
+  <li><code>code.js</code> receives it in <code>figma.ui.onmessage</code>, reads <code>figma.root.name</code> and the page list, and answers with <code>figma.ui.postMessage({ id: 1, result: … })</code>.</li>
+  <li><code>ui.html</code> receives the answer and sends it back up the WebSocket.</li>
+  <li><code>index.js</code> looks up id 1 in the <code>Map</code>, resolves the waiting promise, and the handler returns the result as text.</li>
+  <li>The SDK writes the JSON-RPC response to stdout, and the client reads it.</li>
+</ol>
+<p>
+  The <code>id</code> is the important trick. A WebSocket is just a stream of messages with no
+  built-in idea of "the answer to that question", so every request carries a number and the reply
+  carries the same number back. If no reply arrives in 30 seconds, the promise is rejected with <code>timeout</code>.
+</p>
+
+<h2>The tools</h2>
+<p>The build steps below cover the first four. The last two were added later in the same way: one more command in <code>code.js</code>, one more <code>server.tool</code> line in <code>index.js</code>.</p>
+<div class="scroll">
+<table>
+  <tr><th>Tool</th><th>What the plugin does</th></tr>
+  <tr><td><code>figma_document</code></td><td>Returns the file name, current page and list of pages.</td></tr>
+  <tr><td><code>figma_selection</code></td><td>Walks every selected node and its children, returning id, name, type, position, size, fills and text.</td></tr>
+  <tr><td><code>figma_screenshot</code></td><td>Finds a node by id, exports it as PNG with <code>exportAsync</code>, and sends the bytes back as base64.</td></tr>
+  <tr><td><code>figma_eval</code></td><td>Builds an async function from a string of JavaScript and runs it with <code>figma</code> in scope. This one tool can do anything the Plugin API allows, including creating and editing nodes.</td></tr>
+  <tr><td><code>figma_tokens</code></td><td>Returns the file's variable collections and variables, plus its text, effect and paint styles.</td></tr>
+  <tr><td><code>figma_components</code></td><td>Loads every page and returns the local components and component sets with their properties and variants.</td></tr>
+  <tr><td><code>figma_lint</code></td><td>Walks a node (or the selection) and returns violations computed from node numbers: fractional pixels, spacing off the 4px grid or not bound to a variable, frames without auto layout, text without a text style, unbound fills and strokes, contrast under WCAG AA, small touch targets, and sibling left edges 1 to 3px apart.</td></tr>
+</table>
+</div>
+
+<h2>Build it yourself</h2>
+<p>You need Node.js 18 or newer, the Figma desktop app (development plugins do not load in the browser version), and a text editor.</p>
+
+<h3>Skills it uses</h3>
+<ul>
+  <li><b>JavaScript with promises and async/await.</b> The request/reply matching is a <code>Map</code> of promises.</li>
+  <li><b>WebSockets.</b> One server (<code>ws</code> package), one browser client.</li>
+  <li><b>The Figma Plugin API.</b> The split between sandbox code and UI iframe, and <code>postMessage</code> between them. Figma's plugin docs cover this in the "How plugins run" page.</li>
+  <li><b>MCP basics.</b> A server registers named tools with input schemas; the client lists and calls them. The official SDK handles the JSON-RPC wire format for you.</li>
+</ul>
+
+<h3>Step 1. The server</h3>
+<pre><code>mkdir -p figma-claude-bridge/server figma-claude-bridge/plugin
+cd figma-claude-bridge/server
+npm init -y
+npm pkg set type=module
+npm install @modelcontextprotocol/sdk ws zod</code></pre>
+
+<div class="file">server/index.js</div>
+<pre><code>import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { WebSocketServer } from "ws";
+import { z } from "zod";
+
+const PORT = 3055;
+let plugin = null;          // the one connected Figma plugin
+let seq = 0;                // request counter
+const pending = new Map();  // id -&gt; { resolve, reject }
+
+// 1. WebSocket side: wait for the Figma plugin to dial in
+const wss = new WebSocketServer({ host: "127.0.0.1", port: PORT });
+wss.on("connection", (ws) =&gt; {
+  plugin = ws;
+  ws.on("message", (raw) =&gt; {
+    const m = JSON.parse(raw.toString());
+    const p = pending.get(m.id);
+    if (!p) return;
+    pending.delete(m.id);
+    m.error ? p.reject(new Error(m.error)) : p.resolve(m.result);
+  });
+  ws.on("close", () =&gt; { if (plugin === ws) plugin = null; });
+});
+
+// 2. Send one command to the plugin and wait for the matching reply
+function call(payload) {
+  return new Promise((resolve, reject) =&gt; {
+    if (!plugin || plugin.readyState !== 1)
+      return reject(new Error("Figma plugin not connected. Run Plugins &gt; Development &gt; Claude Bridge in Figma."));
+    const id = ++seq;
+    const t = setTimeout(() =&gt; { pending.delete(id); reject(new Error("timeout")); }, 30000);
+    pending.set(id, {
+      resolve: (v) =&gt; { clearTimeout(t); resolve(v); },
+      reject:  (e) =&gt; { clearTimeout(t); reject(e); },
+    });
+    plugin.send(JSON.stringify({ id, ...payload }));
+  });
+}
+
+const text = (v) =&gt; ({ content: [{ type: "text", text: JSON.stringify(v, null, 2) }] });
+const wrap = (fn) =&gt; async (a) =&gt; {
+  try { return await fn(a); }
+  catch (e) { return { isError: true, content: [{ type: "text", text: e.message }] }; }
+};
+
+// 3. MCP side: register the tools
+const server = new McpServer({ name: "figma-claude-bridge", version: "0.1.0" });
+
+server.tool("figma_document", "Current Figma file name, current page and page list", {},
+  wrap(async () =&gt; text(await call({ cmd: "document" }))));
+
+server.tool("figma_selection", "Nodes currently selected in Figma, with children, geometry, fills and text", {},
+  wrap(async () =&gt; text(await call({ cmd: "selection" }))));
+
+server.tool("figma_screenshot", "PNG screenshot of a node by id",
+  { nodeId: z.string(), scale: z.number().optional() },
+  wrap(async ({ nodeId, scale }) =&gt; {
+    const r = await call({ cmd: "screenshot", nodeId, scale });
+    return { content: [{ type: "image", data: r.base64, mimeType: "image/png" }] };
+  }));
+
+server.tool("figma_eval", "Run JavaScript against the Figma Plugin API.",
+  { code: z.string() },
+  wrap(async ({ code }) =&gt; text(await call({ cmd: "eval", code }))));
+
+await server.connect(new StdioServerTransport());</code></pre>
+
+<div class="note">
+  <b>Do not use <code>console.log</code> in this file.</b> stdout is the MCP channel, so any stray
+  output corrupts the protocol. Use <code>console.error</code> for debugging; it goes to stderr.
+</div>
+
+<h3>Step 2. The plugin</h3>
+<p>Three files. The manifest tells Figma what to load and which addresses the iframe may connect to.</p>
+
+<div class="file">plugin/manifest.json</div>
+<pre><code>{
+  "name": "Claude Bridge",
+  "id": "claude-bridge-local-dev",
+  "api": "1.0.0",
+  "main": "code.js",
+  "ui": "ui.html",
+  "editorType": ["figma"],
+  "documentAccess": "dynamic-page",
+  "networkAccess": {
+    "allowedDomains": ["none"],
+    "devAllowedDomains": ["ws://localhost:3055", "http://localhost:3055"]
+  }
+}</code></pre>
+
+<div class="file">plugin/ui.html &mdash; the iframe: only relays messages</div>
+<pre><code>&lt;!doctype html&gt;
+&lt;html&gt;&lt;body style="font:12px sans-serif;margin:8px"&gt;
+&lt;div id="s"&gt;connecting…&lt;/div&gt;
+&lt;script&gt;
+let ws;
+function connect() {
+  ws = new WebSocket("ws://localhost:3055");
+  ws.onopen  = () =&gt; { document.getElementById("s").textContent = "connected to Claude"; };
+  ws.onclose = () =&gt; { document.getElementById("s").textContent = "disconnected, retrying…"; setTimeout(connect, 2000); };
+  // server -&gt; sandbox
+  ws.onmessage = (e) =&gt; parent.postMessage({ pluginMessage: JSON.parse(e.data) }, "*");
+}
+connect();
+// sandbox -&gt; server
+onmessage = (e) =&gt; {
+  const m = e.data.pluginMessage;
+  if (m &amp;&amp; ws &amp;&amp; ws.readyState === 1) ws.send(JSON.stringify(m));
+};
+&lt;/script&gt;&lt;/body&gt;&lt;/html&gt;</code></pre>
+
+<div class="file">plugin/code.js &mdash; the sandbox: the only part that touches the document</div>
+<pre><code>figma.showUI(__html__, { width: 220, height: 60 });
+
+const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
+
+// Turn a Figma node into plain JSON, recursively
+function describe(n) {
+  const o = { id: n.id, name: n.name, type: n.type };
+  if ("x" in n) { o.x = n.x; o.y = n.y; o.width = n.width; o.height = n.height; }
+  if ("fills" in n &amp;&amp; n.fills !== figma.mixed) o.fills = n.fills;
+  if ("characters" in n) o.characters = n.characters;
+  if ("children" in n) o.children = n.children.map(describe);
+  return o;
+}
+
+figma.ui.onmessage = async (msg) =&gt; {
+  const reply = (data) =&gt; figma.ui.postMessage({ id: msg.id, ...data });
+  try {
+    if (msg.cmd === "selection") {
+      reply({ result: figma.currentPage.selection.map(describe) });
+    } else if (msg.cmd === "document") {
+      reply({ result: {
+        file: figma.root.name,
+        page: figma.currentPage.name,
+        pages: figma.root.children.map((p) =&gt; ({ id: p.id, name: p.name })),
+      } });
+    } else if (msg.cmd === "screenshot") {
+      const node = await figma.getNodeByIdAsync(msg.nodeId);
+      const bytes = await node.exportAsync({ format: "PNG", constraint: { type: "SCALE", value: msg.scale || 1 } });
+      reply({ result: { base64: figma.base64Encode(bytes) } });
+    } else if (msg.cmd === "eval") {
+      const fn = new AsyncFunction("figma", msg.code);
+      const out = await fn(figma);
+      reply({ result: out === undefined ? null : out });
+    } else {
+      reply({ error: "unknown cmd " + msg.cmd });
+    }
+  } catch (e) {
+    reply({ error: String(e &amp;&amp; e.message || e) });
+  }
+};</code></pre>
+
+<h3>Step 3. Load the plugin in Figma</h3>
+<ol class="steps">
+  <li>Open the Figma desktop app and open any file.</li>
+  <li>Menu: <b>Plugins &gt; Development &gt; Import plugin from manifest…</b> and choose <code>plugin/manifest.json</code>.</li>
+  <li>Run it: <b>Plugins &gt; Development &gt; Claude Bridge</b>. A small window says "connecting…" and retries every 2 seconds until the server is up.</li>
+</ol>
+
+<h3>Step 4. Test it with no AI at all</h3>
+<p>
+  The MCP Inspector is a small web page that acts as an MCP client. It starts your server,
+  lists the tools and lets you call them by clicking.
+</p>
+<pre><code>npx @modelcontextprotocol/inspector node /full/path/to/figma-claude-bridge/server/index.js</code></pre>
+<p>
+  When the Inspector starts the server, the plugin window in Figma changes to "connected".
+  Call <code>figma_document</code> and you should see your file name. Then try <code>figma_eval</code> with:
+</p>
+<pre><code>const r = figma.createRectangle();
+r.resize(200, 100);
+r.fills = [{ type: "SOLID", color: { r: 0.9, g: 0.3, b: 0.2 } }];
+return r.id;</code></pre>
+<p>A red rectangle appears on the canvas. Everything after this point is just a different client calling the same tools.</p>
+
+<h3>Step 5. Connect an MCP client</h3>
+<p>Any MCP client that supports stdio servers works. For Claude Code:</p>
+<pre><code>claude mcp add figma-bridge --scope user -- node /full/path/to/figma-claude-bridge/server/index.js</code></pre>
+<p>This adds the entry below to <code>~/.claude.json</code>. Other clients use the same three fields in their own config file.</p>
+<pre><code>"mcpServers": {
+  "figma-bridge": {
+    "type": "stdio",
+    "command": "node",
+    "args": ["/full/path/to/figma-claude-bridge/server/index.js"]
+  }
+}</code></pre>
+
+<h2>Limits of this version</h2>
+<ul>
+  <li><b>The plugin window must stay open.</b> Closing it closes the WebSocket, and every tool returns "Figma plugin not connected".</li>
+  <li><b>One Figma file at a time.</b> The server keeps a single <code>plugin</code> variable, so the most recent connection wins.</li>
+  <li><b>One server at a time.</b> Port 3055 is fixed. A second client session starting a second copy of the server fails because the port is taken.</li>
+  <li><b>Large selections give large answers.</b> <code>describe</code> walks every child with no depth limit.</li>
+  <li><b><code>figma_eval</code> runs any code it is given.</b> Whatever can reach the server can edit or delete anything in the open file. Undo in Figma still works.</li>
+  <li><b>No password on the socket.</b> It listens only on 127.0.0.1, so other machines cannot reach it, but any program on the same Mac can connect to port 3055. Adding a shared secret that the plugin sends as its first message would close that gap.</li>
+  <li><b>Development only.</b> <code>devAllowedDomains</code> works for plugins loaded from a local manifest. A published plugin would need a different network setup and Figma's review.</li>
+</ul>
+
+</main>
+</body>
+</html>

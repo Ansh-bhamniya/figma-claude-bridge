@@ -1,0 +1,17 @@
+<!doctype html>
+<html><body style="font:12px sans-serif;margin:8px">
+<div id="s">connecting…</div>
+<script>
+let ws;
+function connect() {
+  ws = new WebSocket("ws://localhost:3055");
+  ws.onopen = () => { document.getElementById("s").textContent = "connected to Claude"; };
+  ws.onclose = () => { document.getElementById("s").textContent = "disconnected, retrying…"; setTimeout(connect, 2000); };
+  ws.onmessage = (e) => parent.postMessage({ pluginMessage: JSON.parse(e.data) }, "*");
+}
+connect();
+onmessage = (e) => {
+  const m = e.data.pluginMessage;
+  if (m && ws && ws.readyState === 1) ws.send(JSON.stringify(m));
+};
+</script></body></html>
